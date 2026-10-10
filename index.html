@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Mengerjakan Soal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
+        body {
+            min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            background: linear-gradient(145deg, #0b1a2e 0%, #1b2f45 100%); padding: 1rem;
+        }
+        .card {
+            background: rgba(18, 30, 45, 0.85); backdrop-filter: blur(12px);
+            border-radius: 2.5rem; padding: 2.5rem 2rem; max-width: 550px; width: 100%;
+            box-shadow: 0 30px 45px -15px rgba(0,0,0,0.7), inset 0 1px 3px rgba(255,255,255,0.08);
+            border: 1px solid rgba(120,180,255,0.2); text-align: center;
+        }
+        h1 { font-size: 1.9rem; font-weight: 600; color: #c6e2ff; margin-bottom: 1.2rem; letter-spacing: 1px; }
+        .timer-container {
+            background: #0a121c; border-radius: 4rem; padding: 0.8rem 1.5rem;
+            margin: 1.8rem 0 2rem 0; display: inline-block; border: 1px solid #2d4b6e;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.7), 0 8px 18px #00000040;
+        }
+        #timer-display {
+            font-size: 5.5rem; font-weight: 700; font-variant-numeric: tabular-nums;
+            letter-spacing: 8px; line-height: 1.2;
+            background: linear-gradient(180deg, #fff 0%, #aad0ff 100%);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .timer-warning #timer-display {
+            background: linear-gradient(180deg, #ffb3b3 0%, #ff6a6a 100%);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .timer-danger #timer-display {
+            background: linear-gradient(180deg, #ff9e9e 0%, #ff3a3a 100%);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+            animation: pulse 0.8s infinite alternate;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 100% { opacity: 0.85; } }
+        .progress-bar {
+            width: 100%; height: 10px; background: #0e1a28; border-radius: 20px;
+            margin: 1rem 0 2rem 0; overflow: hidden; border: 1px solid #2f4e6b;
+        }
+        #progress-fill {
+            height: 100%; width: 100%; border-radius: 20px;
+            background: linear-gradient(90deg, #2d9cdb, #6bc9ff, #2d9cdb);
+            transition: width 0.3s ease, background 0.3s;
+        }
+        .input-group {
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+            gap: 14px; margin: 24px 0 26px;
+        }
+        .input-group label { color: #9bb9da; font-weight: 500; font-size: 1.1rem;
+                              display: flex; align-items: center; gap: 8px; }
+        .input-group input {
+            background: #0f1b29; border: 1px solid #2e4b6b; border-radius: 3rem;
+            padding: 0.9rem 1.4rem; width: 110px; font-size: 1.3rem; font-weight: 600;
+            text-align: center; color: #e3f0ff; outline: none;
+        }
+        .input-group input:disabled { opacity: 0.6; }
+        .button-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-bottom: 10px; }
+        .btn {
+            background: #1f3145; border: none; border-radius: 4rem; padding: 0.9rem 2rem;
+            font-size: 1.15rem; font-weight: 600; color: #d2e5ff; cursor: pointer;
+            box-shadow: 0 8px 0 #0b1119, 0 10px 20px #00000060;
+            transition: all 0.08s linear; border: 1px solid #3e6085;
+            flex: 1 1 120px; min-width: 120px;
+        }
+        .btn:active { transform: translateY(5px); box-shadow: 0 3px 0 #0b1119; }
+        .btn:disabled { opacity: 0.45; pointer-events: none; filter: grayscale(0.6); }
+        .btn-primary { background: #1f4b7a; border-color: #5f9fff; color: #fff; }
+        .btn-danger { background: #5f2e2e; border-color: #b35e5e; }
+        .btn-secondary { background: #253c52; border-color: #3f658b; }
+        .sound-toggle {
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; margin-top: 1.2rem; color: #9bb9da; font-size: 1rem;
+        }
+        .sound-toggle input { width: 18px; height: 18px; accent-color: #4fa6ff; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>TIMER SOAL</h1>
+
+        <div class="timer-container" id="timerContainer">
+            <div id="timer-display">05:00</div>
+        </div>
+
+        <div class="progress-bar">
+            <div id="progress-fill" style="width: 100%;"></div>
+        </div>
+
+        <div class="input-group">
+            <label>Menit <input type="number" id="input-minutes" value="5" min="0" max="180"></label>
+            <label>Detik <input type="number" id="input-seconds" value="0" min="0" max="59"></label>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" id="startBtn">Mulai</button>
+            <button class="btn btn-secondary" id="pauseBtn" disabled>Jeda</button>
+            <button class="btn btn-danger" id="resetBtn">Reset</button>
+        </div>
+
+        <div class="sound-toggle">
+            <input type="checkbox" id="soundToggle" checked>
+            <label for="soundToggle">Aktifkan Suara</label>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ============================================================
+            // DOM ELEMEN
+            // ============================================================
+            const timerDisplay = document.getElementById('timer-display');
+            const progressFill = document.getElementById('progress-fill');
+            const inputMinutes = document.getElementById('input-minutes');
+            const inputSeconds = document.getElementById('input-seconds');
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const timerContainer = document.getElementById('timerContainer');
+            const soundToggle = document.getElementById('soundToggle');
+
+            // ============================================================
+            // STATE TIMER
+            // ============================================================
+            let totalSeconds = 300;
+            let remainingSeconds = 300;
+            let timerInterval = null;
+            let isRunning = false;
+            let isPaused = false;
+            let menitSudahDiucapkan = [];
+
+            // ============================================================
+            // WEB AUDIO API - MESIN SUARA
+            // ============================================================
+            const SUARA_PATH = 'suara/';
+            let audioCtx = null;
+            const audioBuffers = {};
+
+            const DAFTAR_FILE = [
+                'mulai', 'jeda', 'reset', 'waktu-habis',
+                'sepuluh-menit-lagi', 'dua-puluh-menit-lagi',
+                'tiga-puluh-menit-lagi', 'empat-puluh-menit-lagi',
+                'lima-puluh-menit-lagi', 'enam-puluh-menit-lagi',
+                'sepuluh', 'sembilan', 'delapan', 'tujuh', 'enam',
+                'lima', 'empat', 'tiga', 'dua', 'satu'
+            ];
+
+            function getAudioContext() {
+                if (!audioCtx) {
+                    try {
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    } catch(e) {
+                        console.error('Web Audio API tidak didukung:', e);
+                    }
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                return audioCtx;
+            }
+
+            async function loadAllSounds() {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                console.log('Memuat semua file suara...');
+
+                for (const nama of DAFTAR_FILE) {
+                    if (audioBuffers[nama]) continue;
+                    try {
+                        const resp = await fetch(SUARA_PATH + nama + '.mp3');
+                        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                        const arrayBuf = await resp.arrayBuffer();
+                        const audioBuf = await ctx.decodeAudioData(arrayBuf);
+                        audioBuffers[nama] = audioBuf;
+                        console.log('Loaded: ' + nama + '.mp3 (' + audioBuf.duration.toFixed(2) + 's)');
+                    } catch (e) {
+                        console.warn('Gagal load ' + nama + '.mp3 ->', e.message);
+                    }
+                }
+                console.log('Selesai memuat ' + Object.keys(audioBuffers).length + ' file suara');
+            }
+
+            let activeSources = [];
+            function playVoice(nama, interrupt = true) {
+                if (!soundToggle.checked) return;
+
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                const buffer = audioBuffers[nama];
+                if (!buffer) {
+                    console.warn('Buffer belum siap atau file tidak ada: ' + nama);
+                    playBeep(800, 0.15, 'sine', 0.4);
+                    return;
+                }
+
+                if (interrupt) {
+                    activeSources.forEach(s => { try { s.stop(); } catch(e) {} });
+                    activeSources = [];
+                }
+
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(ctx.destination);
+                source.start(0);
+                activeSources.push(source);
+
+                source.onended = () => {
+                    activeSources = activeSources.filter(s => s !== source);
+                };
+
+                console.log('Memutar: ' + nama + '.mp3');
+            }
+
+            function isAudioReady() {
+                return Object.keys(audioBuffers).length > 0;
+            }
+
+            // ============================================================
+            // PETA NAMA FILE
+            // ============================================================
+            const NAMA_ANGKA = {
+                10: 'sepuluh', 9: 'sembilan', 8: 'delapan', 7: 'tujuh', 6: 'enam',
+                5: 'lima', 4: 'empat', 3: 'tiga', 2: 'dua', 1: 'satu'
+            };
+            const NAMA_MENIT = {
+                60: 'enam-puluh-menit-lagi',
+                50: 'lima-puluh-menit-lagi',
+                40: 'empat-puluh-menit-lagi',
+                30: 'tiga-puluh-menit-lagi',
+                20: 'dua-puluh-menit-lagi',
+                10: 'sepuluh-menit-lagi'
+            };
+
+            function playAngka(angka) {
+                const nama = NAMA_ANGKA[angka];
+                if (nama) playVoice(nama);
+            }
+            function playMenit(menitKe) {
+                const nama = NAMA_MENIT[menitKe];
+                if (nama) playVoice(nama);
+                else console.warn('Tidak ada file untuk menit ke-' + menitKe);
+            }
+
+            // ============================================================
+            // BEEP
+            // ============================================================
+            function playBeep(freq = 880, duration = 0.15, type = 'sine', volume = 0.5, delay = 0) {
+                if (!soundToggle.checked) return;
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const t = ctx.currentTime + delay;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, t);
+                gain.gain.setValueAtTime(0, t);
+                gain.gain.linearRampToValueAtTime(volume, t + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(t);
+                osc.stop(t + duration + 0.02);
+            }
+            function playAlarmSound() {
+                playBeep(1000, 0.12, 'square', 0.4, 0);
+                playBeep(1000, 0.12, 'square', 0.4, 0.18);
+            }
+            function playTimeUpSound() {
+                playBeep(880, 0.3, 'sawtooth', 0.5, 0);
+                playBeep(660, 0.3, 'sawtooth', 0.5, 0.4);
+                playBeep(440, 0.6, 'sawtooth', 0.5, 0.8);
+            }
+
+            // ============================================================
+            // UTIL
+            // ============================================================
+            function formatTime(s) {
+                if (s < 0) s = 0;
+                const m = Math.floor(s / 60);
+                const sec = s % 60;
+                return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+            }
+
+            function updateDisplay() {
+                timerDisplay.textContent = formatTime(remainingSeconds);
+                const percent = totalSeconds > 0 ? (remainingSeconds / totalSeconds) * 100 : 0;
+                progressFill.style.width = Math.max(0, percent) + '%';
+
+                if (remainingSeconds <= 0) {
+                    progressFill.style.background = 'linear-gradient(90deg, #b33e3e, #ff6b6b)';
+                } else if (remainingSeconds <= 30) {
+                    progressFill.style.background = 'linear-gradient(90deg, #c0392b, #e74c3c, #ff5e5e)';
+                } else if (remainingSeconds <= 60) {
+                    progressFill.style.background = 'linear-gradient(90deg, #e67e22, #f39c12, #ffb347)';
+                } else {
+                    progressFill.style.background = 'linear-gradient(90deg, #2d9cdb, #6bc9ff, #2d9cdb)';
+                }
+
+                timerContainer.classList.remove('timer-warning', 'timer-danger');
+                if (remainingSeconds <= 10 && remainingSeconds > 0) {
+                    timerContainer.classList.add('timer-danger');
+                } else if (remainingSeconds <= 30 && remainingSeconds > 0) {
+                    timerContainer.classList.add('timer-warning');
+                }
+            }
+
+            function stopTimer() {
+                if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+                isRunning = false;
+                isPaused = false;
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                inputMinutes.disabled = false;
+                inputSeconds.disabled = false;
+            }
+
+            // ============================================================
+            // TIMER UTAMA
+            // ============================================================
+            function startTimer() {
+                if (timerInterval) clearInterval(timerInterval);
+                isRunning = true;
+                isPaused = false;
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                inputMinutes.disabled = true;
+                inputSeconds.disabled = true;
+
+                menitSudahDiucapkan = [];
+                updateDisplay();
+
+                timerInterval = setInterval(() => {
+                    if (remainingSeconds > 0) {
+                        remainingSeconds--;
+
+                        // === SUARA SETIAP 10 MENIT ===
+                        const sisaMenit = Math.ceil(remainingSeconds / 60);
+                        if (sisaMenit > 0 && sisaMenit % 10 === 0 && !menitSudahDiucapkan.includes(sisaMenit)) {
+                            menitSudahDiucapkan.push(sisaMenit);
+                            console.log('TRIGGER: ' + sisaMenit + ' menit lagi');
+                            playMenit(sisaMenit);
+                        }
+
+                        // === HITUNG MUNDUR 10 DETIK TERAKHIR ===
+                        if (remainingSeconds <= 10 && remainingSeconds > 0) {
+                            playAngka(remainingSeconds);
+                        }
+                        // === BEEP 30-11 DETIK ===
+                        else if (remainingSeconds <= 30 && remainingSeconds > 10) {
+                            playAlarmSound();
+                        }
+
+                        updateDisplay();
+
+                        // === WAKTU HABIS ===
+                        if (remainingSeconds <= 0) {
+                            stopTimer();
+                            updateDisplay();
+                            playTimeUpSound();
+                            setTimeout(() => playVoice('waktu-habis'), 800);
+                        }
+                    } else {
+                        stopTimer();
+                        updateDisplay();
+                    }
+                }, 1000);
+            }
+
+            // ============================================================
+            // INPUT & RESET
+            // ============================================================
+            function getInputTotalSeconds() {
+                let m = parseInt(inputMinutes.value, 10);
+                let s = parseInt(inputSeconds.value, 10);
+                if (isNaN(m) || m < 0) m = 0;
+                if (isNaN(s) || s < 0) s = 0;
+                if (s > 59) s = 59;
+                if (m > 180) m = 180;
+                return (m * 60) + s;
+            }
+
+            function syncInputsFromTotal(sec) {
+                inputMinutes.value = Math.floor(sec / 60);
+                inputSeconds.value = sec % 60;
+            }
+
+            function resetTimerFromInput() {
+                if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+                isRunning = false;
+                isPaused = false;
+                menitSudahDiucapkan = [];
+
+                activeSources.forEach(s => { try { s.stop(); } catch(e) {} });
+                activeSources = [];
+
+                const total = getInputTotalSeconds();
+                if (total <= 0) {
+                    totalSeconds = 0;
+                    remainingSeconds = 0;
+                    updateDisplay();
+                    startBtn.disabled = true;
+                    pauseBtn.disabled = true;
+                    inputMinutes.disabled = false;
+                    inputSeconds.disabled = false;
+                    return;
+                }
+
+                totalSeconds = total;
+                remainingSeconds = total;
+                inputMinutes.disabled = false;
+                inputSeconds.disabled = false;
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+
+                updateDisplay();
+                timerContainer.classList.remove('timer-warning', 'timer-danger');
+            }
+
+            // ============================================================
+            // EVENT LISTENERS
+            // ============================================================
+            startBtn.addEventListener('click', async () => {
+                getAudioContext();
+
+                if (!isAudioReady()) {
+                    await loadAllSounds();
+                }
+
+                if (remainingSeconds <= 0 || !isRunning) {
+                    if (remainingSeconds <= 0) {
+                        const t = getInputTotalSeconds();
+                        if (t <= 0) return;
+                        totalSeconds = t;
+                        remainingSeconds = t;
+                        syncInputsFromTotal(t);
+                    }
+                    if (remainingSeconds > 0) {
+                        playVoice('mulai');
+                        startTimer();
+                    }
+                }
+            });
+
+            pauseBtn.addEventListener('click', () => {
+                if (isRunning && !isPaused) {
+                    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+                    isRunning = false;
+                    isPaused = true;
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    inputMinutes.disabled = true;
+                    inputSeconds.disabled = true;
+                    playVoice('jeda');
+                }
+            });
+
+            resetBtn.addEventListener('click', () => {
+                getAudioContext();
+                resetTimerFromInput();
+                playVoice('reset');
+            });
+
+            function handleInputChange() {
+                if (isRunning || isPaused) return;
+                let m = parseInt(inputMinutes.value, 10);
+                let s = parseInt(inputSeconds.value, 10);
+                if (isNaN(m) || m < 0) m = 0;
+                if (isNaN(s) || s < 0) s = 0;
+                if (s > 59) { s = 59; inputSeconds.value = 59; }
+                if (m > 180) { m = 180; inputMinutes.value = 180; }
+                const total = (m * 60) + s;
+                totalSeconds = total;
+                remainingSeconds = total;
+                if (total <= 0) {
+                    startBtn.disabled = true;
+                } else {
+                    startBtn.disabled = false;
+                }
+                updateDisplay();
+            }
+            inputMinutes.addEventListener('input', handleInputChange);
+            inputSeconds.addEventListener('input', handleInputChange);
+
+            soundToggle.addEventListener('change', () => {
+                if (soundToggle.checked) {
+                    getAudioContext();
+                } else {
+                    activeSources.forEach(s => { try { s.stop(); } catch(e) {} });
+                    activeSources = [];
+                }
+            });
+
+            // ============================================================
+            // INIT
+            // ============================================================
+            (function init() {
+                totalSeconds = 300;
+                remainingSeconds = 300;
+                syncInputsFromTotal(300);
+                updateDisplay();
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                inputMinutes.disabled = false;
+                inputSeconds.disabled = false;
+                timerContainer.classList.remove('timer-warning', 'timer-danger');
+
+                loadAllSounds();
+
+                document.body.addEventListener('click', function initAudioOnce() {
+                    getAudioContext();
+                    document.body.removeEventListener('click', initAudioOnce);
+                }, { once: true });
+            })();
+
+        })();
+    </script>
+</body>
+</html>
